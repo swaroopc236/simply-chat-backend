@@ -100,7 +100,7 @@ exports.getUserByEmailId = (req, res) => {
     const emailId = req.body.emailId;
     User.find({email: emailId}, (err, doc) => {
         if(err) {
-            console.error('\x1b[31m%s\x1b[0m', err);
+            console.error(err);
             return res.status(500).json({
                 error_msg: 'Something went wrong'
             });
