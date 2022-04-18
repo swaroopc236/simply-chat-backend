@@ -1,6 +1,8 @@
 const User = require('./model');
 const {OAuth2Client} = require('google-auth-library');
 const bcrypt = require('bcrypt');
+const {v4: uuid} = require('uuid');
+
 const client = new OAuth2Client(process.env.WEB_CLIENT_ID);
 
 const saltRounds = 10;
@@ -69,7 +71,7 @@ exports.signInUser = async (req, res) => {
                 console.log(password, authenticatedUserData.pwd);
                 const validatedPassword = await bcrypt.compare(password, authenticatedUserData.pwd);
                 if(validatedPassword) {
-                    console.log('Succesful login');
+                    console.log('Succesfull login');
                     return res.status(200).json({
                         userData: authenticatedUserData
                     })
@@ -85,7 +87,7 @@ exports.signInUser = async (req, res) => {
                     app_displayname: "",
                     auth_type: authType,
                     auth_id: authenticatedUserData.auth_id,
-                    
+                    display_picture_url: "",
                 });
                 newUser.save();
             }
@@ -93,6 +95,52 @@ exports.signInUser = async (req, res) => {
                 userData: userData
             });
         }
+    });
+}
+
+exports.signUpUser = async (req, res) => {
+    const emailId = req.body.emailId;
+    const password = req.body.password;
+    const authType = req.body.authType;
+
+    User.findOne({email: emailId}, async (err, doc) => {
+        if(err) {
+            console.error(err);
+            return res.status(500).json({
+                error_msg: 'Could not register'
+            });
+        }
+        if(doc) {
+            // console.log('Email already registered', doc);
+            return res.status(403).json({
+                error_msg: 'Email is already registered'
+            });
+        }
+        const authId = uuid();
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        const newUser = new User({
+            email: emailId,
+            pwd: hashedPassword,
+            auth_displayname: "",
+            app_displayname: "",
+            auth_type: authType,
+            auth_id: authId,
+            display_picture_url: "",
+            isEmailVerified: false,
+        });
+        const savedUser = await newUser.save();
+        if(!savedUser) {
+            console.error('Could not create new user', err);
+            return res.status(500).json({
+                error_msg: 'Could not sign up'
+            }); 
+        }
+        return res.status(201).json({
+            msg: 'User registered',
+            userData: savedUser
+        })
     });
 }
 

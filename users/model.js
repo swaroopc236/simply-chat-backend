@@ -9,6 +9,7 @@ const userSchema = new Schema({
     email: String,
     pwd: String,
     display_picture_url: String,
+    isEmailVerified: Boolean
 })
 
 const User = mongoose.model('User', userSchema);
