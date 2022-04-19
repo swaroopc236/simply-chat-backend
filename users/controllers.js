@@ -58,6 +58,7 @@ exports.signInUser = async (req, res) => {
 
     // User.findOne({auth_id: authenticatedUserData.sub}, (err, doc) => {
     User.findOne({email: authenticatedUserData.email}, async (err, doc) => {
+        let user;
         if(err) {
             console.error('\x1b[31m%s\x1b[0m', err);
             return res.status(500).json({
@@ -72,13 +73,14 @@ exports.signInUser = async (req, res) => {
                 const validatedPassword = await bcrypt.compare(password, authenticatedUserData.pwd);
                 if(validatedPassword) {
                     console.log('Succesfull login');
+                    user = authenticatedUserData
                     return res.status(200).json({
-                        userData: authenticatedUserData
-                    })
+                        user: user
+                    });
                 }
                 return res.status(401).json({
                     error_msg: 'Invalid Credentials'
-                })
+                });
             }
             if(!doc && authType != 'email-pwd') {
                 const newUser = new User({
@@ -89,10 +91,13 @@ exports.signInUser = async (req, res) => {
                     auth_id: authenticatedUserData.auth_id,
                     display_picture_url: "",
                 });
-                newUser.save();
+                user = await newUser.save();
+            }
+            if(doc && authType != 'email-pwd') {
+                user = doc;
             }
             return res.status(200).json({
-                userData: userData
+                user: user
             });
         }
     });
